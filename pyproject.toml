@@ -1,0 +1,7 @@
+[project]
+name = "mu-bulk-ms"
+version = "0.0.0"
+description = "MeetUN Bulk CRUD operations handled asynchronously"
+readme = "README.md"
+requires-python = ">=3.13.4"
+dependencies = []
