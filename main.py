@@ -25,6 +25,11 @@ async def lifespan(app: FastAPI):
     background tasks, etc.
     '''
     # Setup section
+    print(f'Starting Celery setup')
+    from worker import celery
+
+    app.state.celery_app = celery
+    print(f'Completed Celery setup')
 
     yield
 
