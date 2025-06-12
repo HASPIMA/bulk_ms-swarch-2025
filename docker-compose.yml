@@ -1,6 +1,5 @@
 services:
 
-  # TODO: Modify name to result backend or something
   mu_bulk_rb:
     container_name: ${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}
 
