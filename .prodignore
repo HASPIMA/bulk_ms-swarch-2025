@@ -1,0 +1,28 @@
+#!include:.gitignore
+
+# ----------------
+# .prodignore
+# ----------------
+
+# First line allows us to include .gitignore file contents into this file.
+
+# This file specifies files that are *not* uploaded to Google Cloud Platform
+# using gcloud. It follows the same syntax as .gitignore, with the addition of
+# "#!include" directives (which insert the entries of the given .gitignore-style
+# file at that point).
+#
+# For more information, run:
+#   $ gcloud topic gcloudignore
+#
+
+# Do not ignore environment variables from .env file
+!.env
+
+# Ignore deployment and development folders
+.github/
+.vscode/
+.git
+.gitignore
+.gcloudignore
+.env.example
+README.md
