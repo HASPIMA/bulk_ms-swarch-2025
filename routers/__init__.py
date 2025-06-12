@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-routes = APIRouter(
+router = APIRouter(
     tags=["API"],
 )
 
 
-__all__ = ["routes"]
+__all__ = ["router"]
