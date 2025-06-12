@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from models.healthcheck import HealthCheck
+from routers import routes
 
 # Load environment variables from .env file
 load_dotenv()
@@ -77,6 +78,8 @@ async def read_root() -> HealthCheck:
         message="MeetUN Bulk API is running",
         version=__version__,
     )
+
+app.include_router(routes, prefix="/api")
 
 
 if __name__ == '__main__':
