@@ -13,6 +13,6 @@ celery.conf.update(
     result_backend=getenv('CELERY_RESULT_BACKEND', DEFAULT_REDIS_URL),
     include=[
         # Add the module containing the task
-        'tasks.example',
+        'tasks.examples',
     ]
 )

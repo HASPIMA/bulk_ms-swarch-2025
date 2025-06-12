@@ -1,10 +1,10 @@
 
 from celery import shared_task
 
-from models.company import CompaniesResponse
-from models.person import PeopleResponse
-from services.example.companies import generate_companies
-from services.example.people import generate_people
+from models.examples.company import CompaniesResponse
+from models.examples.person import PeopleResponse
+from services.examples.companies import generate_companies
+from services.examples.people import generate_people
 
 
 @shared_task(pydantic=True)
