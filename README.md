@@ -92,3 +92,90 @@ host machine to the port `8001` of the container.
 ```bash
 docker run -e PORT=8001 -p 8000:8001 mu-bulk-ms
 ```
+
+### Local development
+
+#### Setup locally
+
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+2. Install required packages
+
+    ```sh
+    uv sync
+    ```
+
+3. Activate the
+[environment](https://docs.astral.sh/uv/pip/environments/):
+
+    ```sh
+    uv venv
+    ```
+
+#### Run Locally
+
+There are some components to run:
+
+1. [**Bulk microservice**](#running-the-bulk-microservice) - The web
+server that will handle the requests
+2. [**Worker**](#running-the-worker) - The worker that will process
+the requests using the
+[competing consumer pattern](https://www.enterpriseintegrationpatterns.com/patterns/messaging/CompetingConsumers.html)
+3. [**Flower**](#running-flower) (optional) - The web UI for
+monitoring the Celery tasks
+4. [**Redis**](#running-redis) (required if environment variable not
+provided) - The message broker (for now) and result backend for Celery
+
+##### Running the Bulk microservice
+
+Once [setup](#setup-locally), you should be able to run the project
+by running:
+
+```sh
+fastapi dev main.py
+```
+
+If you don't want file changes to re-run the project you should run instead:
+
+```sh
+fastapi dev main.py
+```
+
+Alternatively, you can run the [main](main.py) script directly with:
+
+```sh
+uv run main.py
+```
+
+##### Running the Worker
+
+The worker is responsible for processing the requests. You can run it with:
+
+```sh
+celery -A worker.celery worker --loglevel=info
+```
+
+##### Running Flower
+
+Flower is a web UI for monitoring the Celery tasks. You can run it with:
+
+```sh
+celery --broker=<CELERY_BROKER_URL> flower --port=5555
+```
+
+You can then access it at `http://localhost:5555` (or the port you specified).
+
+##### Running Redis
+
+> [!WARNING]
+> The way this command is setup is for redis to be ephemeral. If you
+> wish to preserve the volume, remove the `--rm` flag.
+
+If you don't have Redis installed, you can run it with Docker. Like
+this:
+
+```sh
+docker run -it --rm -p 6379:6379 redis:7-alpine
+```
+
+You can then access it at `redis://localhost:6379/0` (or the port you specified).
