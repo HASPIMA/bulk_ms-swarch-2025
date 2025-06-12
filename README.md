@@ -1,15 +1,32 @@
 # MeetUN Bulk Processing API
 
+- [MeetUN Bulk Processing API](#meetun-bulk-processing-api)
+  - [Environment Variables](#environment-variables)
+  - [Running and setting up the project](#running-and-setting-up-the-project)
+    - [Docker](#docker)
+      - [Regenerate the ignore file](#regenerate-the-ignore-file)
+      - [Running everything](#running-everything)
+      - [Running only the Processing API](#running-only-the-processing-api)
+        - [Build the Docker image](#build-the-docker-image)
+        - [Running the image](#running-the-image)
+    - [Local development](#local-development)
+      - [Setup locally](#setup-locally)
+      - [Run Locally](#run-locally)
+        - [Running the Bulk microservice](#running-the-bulk-microservice)
+        - [Running the Worker](#running-the-worker)
+        - [Running Flower](#running-flower)
+        - [Running Redis](#running-redis)
+
 ## Environment Variables
 
 To run this project, you will need to add the following environment
 variables to your .env file, you can check
 [this example](.env.example) file too
 
-* `PORT` - The port where the server will run on
-* `CELERY_BROKER_URL` - The URL of the Celery broker (e.g., Redis
+- `PORT` - The port where the server will run on
+- `CELERY_BROKER_URL` - The URL of the Celery broker (e.g., Redis
 or RabbitMQ)
-* `CELERY_RESULT_BACKEND` - The URL of the Celery result backend (e.g., Redis or
+- `CELERY_RESULT_BACKEND` - The URL of the Celery result backend (e.g., Redis or
 RabbitMQ)
 
 ## Running and setting up the project
