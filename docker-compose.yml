@@ -1,0 +1,44 @@
+services:
+
+  # TODO: Modify name to result backend or something
+  redis:
+    image: redis:7-alpine
+
+  # TODO: Use RabbitMQ as broker
+  # mu_bulk_bkr:
+  #   image: rabbitmq:4-management-alpine
+
+  # Microservice
+  mu_bulk_ms:
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PORT=8080
+    depends_on:
+      - redis
+
+  # Worker:
+  mu_bulk_wkr:
+    build: .
+    command: celery -A worker.celery worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - mu_bulk_ms
+
+  # Task dashboard:
+  mu_bulk_dashboard:
+    build: .
+    # FIXME: Generalize port by using an environment variable
+    command: celery --broker=redis://redis:6379/0 flower --port=5555
+    ports:
+      - 5555:5555
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - mu_bulk_wkr
