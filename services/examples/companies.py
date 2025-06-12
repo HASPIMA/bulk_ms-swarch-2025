@@ -1,7 +1,7 @@
 import time
 from uuid import uuid4
 
-from models.company import Company
+from models.examples.company import Company
 
 
 def generate_companies() -> list[Company]:

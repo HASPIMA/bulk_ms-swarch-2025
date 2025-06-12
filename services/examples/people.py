@@ -1,7 +1,7 @@
 import time
 from uuid import uuid4
 
-from models.person import Person
+from models.examples.person import Person
 
 
 def generate_people():
