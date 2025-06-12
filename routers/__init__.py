@@ -1,8 +1,13 @@
 from fastapi import APIRouter
 
+from .tasks import router as tasks_router
+
 router = APIRouter(
     tags=["API"],
 )
 
+router.include_router(
+    tasks_router,
+)
 
 __all__ = ["router"]
