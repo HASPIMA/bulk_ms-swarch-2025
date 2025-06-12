@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from models.healthcheck import HealthCheck
-from routers import routes
+from routers import router
 
 # Load environment variables from .env file
 load_dotenv()
@@ -79,7 +79,7 @@ async def read_root() -> HealthCheck:
         version=__version__,
     )
 
-app.include_router(routes, prefix="/api")
+app.include_router(router, prefix="/api")
 
 
 if __name__ == '__main__':
