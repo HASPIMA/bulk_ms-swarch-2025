@@ -1,9 +1,19 @@
 services:
 
+  # Result Backend:
   mu_bulk_rb:
+    image: redis:7-alpine
+
     container_name: ${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}
 
-    image: redis:7-alpine
+    # Hostname for which the service will be reachable
+    hostname: ${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}
+
+    # Ports exposed to OTHER SERVICES but NOT the HOST machine
+    expose:
+      - ${mu_whitelist_db_INTERNAL_PORT:-6379}
+
+    restart: always
 
   # TODO: Use RabbitMQ as broker
   # mu_bulk_bkr:
