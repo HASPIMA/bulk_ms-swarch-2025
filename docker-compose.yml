@@ -41,13 +41,28 @@ services:
       RABBITMQ_DEFAULT_PASS: ${mu_bulk_bkr_PASS:-passMeetUN}
       RABBITMQ_DEFAULT_VHOST: ${mu_bulk_bkr_VHOST:-BulkMeetUN}
 
+      # if setting up the erlang cookie is necessary uncomment this
+      # RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbitmq -setcookie mycookie
+
+    healthcheck:
+      # use the flag --erlang-cookie if setting the erlang
+      # test: rabbitmq-diagnostics -q ping --erlang-cookie "mycookie"
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # Microservice
   mu_bulk_ms:
     build: .
 
     depends_on:
-      - mu_bulk_rb
-      - mu_bulk_bkr
+      mu_bulk_rb:
+        condition: service_started
+      mu_bulk_bkr:
+        condition: service_healthy
+        restart: true
 
     container_name: ${mu_bulk_ms_HOSTNAME:-mu_bulk_ms}
 
