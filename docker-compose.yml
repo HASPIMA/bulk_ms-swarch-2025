@@ -18,9 +18,28 @@ services:
     volumes:
       - mu-bulk-rb-data:/data
 
-  # TODO: Use RabbitMQ as broker
-  # mu_bulk_bkr:
-  #   image: rabbitmq:4-management-alpine
+  # Broker:
+  mu_bulk_bkr:
+    image: rabbitmq:4-management-alpine
+
+    container_name: ${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}
+
+    # Hostname for which the service will be reachable
+    hostname: ${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}
+
+    # Ports exposed to OTHER SERVICES but NOT the HOST machine
+    expose:
+      # Message queue
+      - ${mu_bulk_bkr_INTERNAL_PORT:-5672}
+
+      # Monitoring and management
+      - ${mu_bulk_bkr_MANAGEMENT_INTERNAL_PORT:-15672}
+
+    environment:
+      RABBITMQ_NODE_PORT: ${mu_bulk_bkr_INTERNAL_PORT:-5672}
+      RABBITMQ_DEFAULT_USER: ${mu_bulk_bkr_USER:-meetUN}
+      RABBITMQ_DEFAULT_PASS: ${mu_bulk_bkr_PASS:-passMeetUN}
+      RABBITMQ_DEFAULT_VHOST: ${mu_bulk_bkr_VHOST:-BulkMeetUN}
 
   # Microservice
   mu_bulk_ms:
@@ -28,6 +47,7 @@ services:
 
     depends_on:
       - mu_bulk_rb
+      - mu_bulk_bkr
 
     container_name: ${mu_bulk_ms_HOSTNAME:-mu_bulk_ms}
 
@@ -38,7 +58,7 @@ services:
       - ${mu_bulk_ms_EXTERNAL_PORT:-8080}:${mu_bulk_ms_INTERNAL_PORT:-8080}
 
     environment:
-      CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
+      CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}}
       CELERY_RESULT_BACKEND: ${mu_bulk_CELERY_RESULT_BACKEND:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
       PORT: ${mu_bulk_ms_INTERNAL_PORT:-8080}
 
@@ -52,7 +72,7 @@ services:
       - mu_bulk_ms
 
     environment:
-      CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
+      CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}}
       CELERY_RESULT_BACKEND: ${mu_bulk_CELERY_RESULT_BACKEND:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
 
   # Task dashboard:
@@ -68,7 +88,7 @@ services:
     hostname: ${mu_bulk_dashboard_HOSTNAME:-mu_bulk_dashboard}
 
     # FIXME: Generalize port by using an environment variable
-    command: celery --broker=${mu_bulk_CELERY_BROKER_URL:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0} flower --port=${mu_bulk_dashboard_INTERNAL_PORT:-5555}
+    command: celery --broker=${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}} flower --port=${mu_bulk_dashboard_INTERNAL_PORT:-5555}
 
     # Ports available on the HOST machine
     ports:
