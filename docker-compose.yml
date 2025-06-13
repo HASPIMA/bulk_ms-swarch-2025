@@ -15,6 +15,9 @@ services:
 
     restart: always
 
+    volumes:
+      - mu-bulk-rb-data:/data
+
   # TODO: Use RabbitMQ as broker
   # mu_bulk_bkr:
   #   image: rabbitmq:4-management-alpine
@@ -56,3 +59,6 @@ services:
       mu_bulk_dashboard_INTERNAL_PORT: ${mu_bulk_dashboard_INTERNAL_PORT:-5555}
     depends_on:
       - mu_bulk_wkr
+
+volumes:
+  mu-bulk-rb-data:
