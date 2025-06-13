@@ -95,7 +95,7 @@ services:
     build: .
 
     depends_on:
-      - mu_bulk_wkr
+      - mu_bulk_ms
 
     container_name: ${mu_bulk_dashboard_HOSTNAME:-mu_bulk_dashboard}
 
