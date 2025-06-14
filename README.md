@@ -25,10 +25,9 @@ variables to your .env file, you can check
 [this example](.env.example) file too
 
 - `PORT` - The port where the server will run on
-- `CELERY_BROKER_URL` - The URL of the Celery broker (e.g., Redis
-or RabbitMQ)
-- `CELERY_RESULT_BACKEND` - The URL of the Celery result backend (e.g., Redis or
-RabbitMQ)
+- `CELERY_BROKER_URL` - The URL of the Celery broker (e.g., RabbitMQ)
+- `CELERY_RESULT_BACKEND` - The URL of the Celery result backend
+(e.g., Redis)
 
 ## Running and setting up the project
 
@@ -36,9 +35,9 @@ RabbitMQ)
 
 #### Regenerate the ignore file
 
-You may want to regenerate the `.dockerignore` file if you modified either
-`.gitignore` or `.gcloudignore` files. You can do this by running the following
-commands:
+You may want to regenerate the `.dockerignore` file if you modified
+either `.gitignore` or `.gcloudignore` files. You can do this by
+running the following commands:
 
 > [!NOTE]
 > This command will overwrite the `.dockerignore` file with all the
@@ -69,14 +68,16 @@ docker-compose down
 ```
 
 > [!NOTE]
-> If you want to run the project in detached mode, you can use the `-d` flag:
+> If you want to run the project in detached mode, you can use the
+> `-d` flag:
 
 ```sh
 docker-compose up --build -d
 ```
 
 > [!TIP]
-> If you want to destroy the containers and remove the volumes, you can use the `--volumes` flag:
+> If you want to destroy the containers and remove the volumes, you
+> can use the `--volumes` flag:
 
 ```sh
 docker-compose down --volumes
@@ -154,7 +155,8 @@ by running:
 fastapi dev main.py
 ```
 
-If you don't want file changes to re-run the project you should run instead:
+If you don't want file changes to re-run the project you should run
+instead:
 
 ```sh
 fastapi dev main.py
@@ -168,21 +170,25 @@ uv run main.py
 
 ##### Running the Worker
 
-The worker is responsible for processing the requests. You can run it with:
+The worker is responsible for processing the requests. You can run it
+with:
 
 ```sh
-celery -A worker.celery worker --loglevel=info
+celery -A worker.celery worker --loglevel=info -E
 ```
 
 ##### Running Flower
 
-Flower is a web UI for monitoring the Celery tasks. You can run it with:
+Flower is a web UI for monitoring the Celery tasks. You can run it
+with:
 
 ```sh
 celery --broker=<CELERY_BROKER_URL> flower --port=5555
 ```
 
-You can then access it at `http://localhost:5555` (or the port you specified).
+You can then access it at
+[http://localhost:5555](http://localhost:5555) (or the port you
+specified).
 
 ##### Running Result Backend
 
