@@ -15,7 +15,8 @@
         - [Running the Bulk microservice](#running-the-bulk-microservice)
         - [Running the Worker](#running-the-worker)
         - [Running Flower](#running-flower)
-        - [Running Redis](#running-redis)
+        - [Running Result Backend](#running-result-backend)
+        - [Running Broker](#running-broker)
 
 ## Environment Variables
 
@@ -140,8 +141,9 @@ the requests using the
 [competing consumer pattern](https://www.enterpriseintegrationpatterns.com/patterns/messaging/CompetingConsumers.html)
 3. [**Flower**](#running-flower) (optional) - The web UI for
 monitoring the Celery tasks
-4. [**Redis**](#running-redis) (required if environment variable not
-provided) - The message broker (for now) and result backend for Celery
+4. [**Redis**](#running-result-backend) (required if
+environment variable not provided) The result backend for Celery
+5. [**RabbitMQ**](#running-broker) The message broker for Celery
 
 ##### Running the Bulk microservice
 
@@ -182,7 +184,7 @@ celery --broker=<CELERY_BROKER_URL> flower --port=5555
 
 You can then access it at `http://localhost:5555` (or the port you specified).
 
-##### Running Redis
+##### Running Result Backend
 
 > [!WARNING]
 > The way this command is setup is for redis to be ephemeral. If you
@@ -196,3 +198,23 @@ docker run -it --rm -p 6379:6379 redis:7-alpine
 ```
 
 You can then access it at `redis://localhost:6379/0` (or the port you specified).
+
+##### Running Broker
+
+> [!WARNING]
+> The way this command is setup is for redis to be ephemeral. If you
+> wish to preserve the volume, remove the `--rm` flag.
+
+If you don't have Redis installed, you can run it with Docker. Like
+this:
+
+```sh
+docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management-alpine
+```
+
+You can then access it at `amqp://guest:guest@localhost:5672/`.
+
+> [!TIP]
+> You can access the management and monitoring dashboard by going to
+> [http://localhost:15672/](http://localhost:15672/). Default user and
+> password are `guest`.
