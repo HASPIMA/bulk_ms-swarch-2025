@@ -1,117 +1,201 @@
+#--------------------------------------------------------------------------------------------------------------------------#
+#|                                                COMMON CONFIGURATIONS                                                   |#
+#--------------------------------------------------------------------------------------------------------------------------#
+# &mu-bulk-ms-common-config is what's called an anchor in .yaml files. It lets us reuse everything that follows, so that 
+# setting up the dev and prod profiles is easier
+x-mu-bulk-ms-common-config: &mu-bulk-ms-common-config
+  build: .
+
+  # Hostname for which the service will be reachable
+  hostname: ${mu_bulk_ms_HOSTNAME:-mu_bulk_ms}
+  container_name: ${mu_bulk_ms_HOSTNAME:-mu_bulk_ms}
+
+  environment:
+    CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}}
+    CELERY_RESULT_BACKEND: ${mu_bulk_CELERY_RESULT_BACKEND:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
+    PORT: ${mu_bulk_ms_INTERNAL_PORT:-8080}
+
+
+
+x-mu-bulk-rb-common-config: &mu-bulk-rb-common-config
+  image: redis:7-alpine
+
+  # Hostname for which the service will be reachable
+  hostname: ${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}
+  container_name: ${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}
+
+  # Ports exposed to OTHER SERVICES but NOT the HOST machine
+  expose:
+    - ${mu_whitelist_db_INTERNAL_PORT:-6379}
+
+  restart: always
+
+  volumes:
+    - mu-bulk-rb-data:/data
+
+
+
+x-mu-bulk-bkr-common-config: &mu-bulk-bkr-common-config
+  image: rabbitmq:4-management-alpine
+
+  # Hostname for which the service will be reachable
+  hostname: ${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}
+  container_name: ${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}
+
+  # Ports exposed to OTHER SERVICES but NOT the HOST machine
+  expose:
+    # Message queue
+    - ${mu_bulk_bkr_INTERNAL_PORT:-5672}
+
+    # Monitoring and management
+    - ${mu_bulk_bkr_MANAGEMENT_INTERNAL_PORT:-15672}
+
+  environment:
+    RABBITMQ_NODE_PORT: ${mu_bulk_bkr_INTERNAL_PORT:-5672}
+    RABBITMQ_DEFAULT_USER: ${mu_bulk_bkr_USER:-meetUN}
+    RABBITMQ_DEFAULT_PASS: ${mu_bulk_bkr_PASS:-passMeetUN}
+    RABBITMQ_DEFAULT_VHOST: ${mu_bulk_bkr_VHOST:-BulkMeetUN}
+
+    # if setting up the erlang cookie is necessary uncomment this
+    # RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbitmq -setcookie mycookie
+
+  healthcheck:
+    # use the flag --erlang-cookie if setting the erlang
+    # test: rabbitmq-diagnostics -q ping --erlang-cookie "mycookie"
+    test: rabbitmq-diagnostics -q ping
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 10s
+
+
+
+x-mu-bulk-wkr-common-config: &mu-bulk-wkr-common-config
+  build: .
+
+  # Hostname for which the service will be reachable
+  hostname: ${mu_bulk_wkr_HOSTNAME:-mu_bulk_wkr}
+  container_name: ${mu_bulk_wkr_HOSTNAME:-mu_bulk_wkr}
+
+  command: celery -A worker.celery worker --loglevel=info
+
+  environment:
+    CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}}
+    CELERY_RESULT_BACKEND: ${mu_bulk_CELERY_RESULT_BACKEND:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
+
+
+
 services:
-
-  # Result Backend:
-  mu_bulk_rb:
-    image: redis:7-alpine
-
-    container_name: ${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}
-
-    # Hostname for which the service will be reachable
-    hostname: ${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}
-
-    # Ports exposed to OTHER SERVICES but NOT the HOST machine
-    expose:
-      - ${mu_whitelist_db_INTERNAL_PORT:-6379}
-
-    restart: always
-
-    volumes:
-      - mu-bulk-rb-data:/data
-
-  # Broker:
-  mu_bulk_bkr:
-    image: rabbitmq:4-management-alpine
-
-    container_name: ${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}
-
-    # Hostname for which the service will be reachable
-    hostname: ${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}
-
-    # Ports exposed to OTHER SERVICES but NOT the HOST machine
-    expose:
-      # Message queue
-      - ${mu_bulk_bkr_INTERNAL_PORT:-5672}
-
-      # Monitoring and management
-      - ${mu_bulk_bkr_MANAGEMENT_INTERNAL_PORT:-15672}
-
-    environment:
-      RABBITMQ_NODE_PORT: ${mu_bulk_bkr_INTERNAL_PORT:-5672}
-      RABBITMQ_DEFAULT_USER: ${mu_bulk_bkr_USER:-meetUN}
-      RABBITMQ_DEFAULT_PASS: ${mu_bulk_bkr_PASS:-passMeetUN}
-      RABBITMQ_DEFAULT_VHOST: ${mu_bulk_bkr_VHOST:-BulkMeetUN}
-
-      # if setting up the erlang cookie is necessary uncomment this
-      # RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbitmq -setcookie mycookie
-
-    healthcheck:
-      # use the flag --erlang-cookie if setting the erlang
-      # test: rabbitmq-diagnostics -q ping --erlang-cookie "mycookie"
-      test: rabbitmq-diagnostics -q ping
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
+#--------------------------------------------------------------------------------------------------------------------------#
+#|                                                PROFILES FOR PRODUCTION                                                 |#
+#--------------------------------------------------------------------------------------------------------------------------#
+# These profiles don't expose any ports to the host. The networks they are connected to are defined at the root of the
+# project in a Docker Compose override file
+# Also, the Flower Dashboard isn't created and started in production
   # Microservice
-  mu_bulk_ms:
-    build: .
-
+  mu_bulk_ms_prod:
+    <<: *mu-bulk-ms-common-config
     depends_on:
-      mu_bulk_rb:
+      mu_bulk_rb_prod:
         condition: service_started
-      mu_bulk_bkr:
+      mu_bulk_bkr_prod:
         condition: service_healthy
         restart: true
+    profiles:
+      - prod
 
-    container_name: ${mu_bulk_ms_HOSTNAME:-mu_bulk_ms}
-
-    # Hostname for which the service will be reachable
-    hostname: ${mu_bulk_ms_HOSTNAME:-mu_bulk_ms}
-
-    ports:
-      - ${mu_bulk_ms_EXTERNAL_PORT:-8080}:${mu_bulk_ms_INTERNAL_PORT:-8080}
-
-    environment:
-      CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}}
-      CELERY_RESULT_BACKEND: ${mu_bulk_CELERY_RESULT_BACKEND:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
-      PORT: ${mu_bulk_ms_INTERNAL_PORT:-8080}
+  # Broker:
+  mu_bulk_bkr_prod:
+    <<: *mu-bulk-bkr-common-config
+    profiles:
+      - prod
 
   # Worker:
-  mu_bulk_wkr:
-    build: .
-
-    command: celery -A worker.celery worker --loglevel=info
-
+  mu_bulk_wkr_prod:
+    <<: *mu-bulk-wkr-common-config
     depends_on:
-      - mu_bulk_ms
+    - mu_bulk_ms_prod
+    profiles:
+      - prod
 
-    environment:
-      CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}}
-      CELERY_RESULT_BACKEND: ${mu_bulk_CELERY_RESULT_BACKEND:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
+  # Result Backend:
+  mu_bulk_rb_prod:
+    <<: *mu-bulk-rb-common-config
+    profiles:
+      - prod
+
+
+
+#--------------------------------------------------------------------------------------------------------------------------#
+#|                                                PROFILES FOR DEVELOPMENT                                                |#
+#--------------------------------------------------------------------------------------------------------------------------#
+# Bulk microservice for development (connected to the default network and exposing its ports to the host)
+# It also creates and starts the Flower Dashboard
+  mu_bulk_ms_dev:
+    <<: *mu-bulk-ms-common-config
+    ports:
+      - ${mu_bulk_ms_EXTERNAL_PORT:-8080}:${mu_bulk_ms_INTERNAL_PORT:-8080}
+    depends_on:
+      mu_bulk_rb_dev:
+        condition: service_started
+      mu_bulk_bkr_dev:
+        condition: service_healthy
+        restart: true
+    profiles:
+      - dev
+    networks:
+      - default
+
+  # Broker:
+  mu_bulk_bkr_dev:
+    <<: *mu-bulk-bkr-common-config
+    profiles:
+      - dev
+    networks:
+      - default
+
+  # Worker:
+  mu_bulk_wkr_dev:
+    <<: *mu-bulk-wkr-common-config
+    depends_on:
+    - mu_bulk_ms_dev
+    profiles:
+      - dev
+    networks:
+      - default
+
+  # Result Backend:
+  mu_bulk_rb_dev:
+    <<: *mu-bulk-rb-common-config
+    profiles:
+      - dev
+    networks:
+      - default
 
   # Task dashboard:
-  mu_bulk_dashboard:
+  mu_bulk_dashboard_dev:
     build: .
-
     depends_on:
-      - mu_bulk_ms
-
-    container_name: ${mu_bulk_dashboard_HOSTNAME:-mu_bulk_dashboard}
+      - mu_bulk_ms_dev
+    profiles:
+      - dev
+    networks:
+      - default
 
     # Hostname for which the service will be reachable
     hostname: ${mu_bulk_dashboard_HOSTNAME:-mu_bulk_dashboard}
-
-    # FIXME: Generalize port by using an environment variable
-    command: celery --broker=${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}} flower --port=${mu_bulk_dashboard_INTERNAL_PORT:-5555}
+    container_name: ${mu_bulk_dashboard_HOSTNAME:-mu_bulk_dashboard}
 
     # Ports available on the HOST machine
     ports:
       - ${mu_bulk_dashboard_EXTERNAL_PORT:-5555}:${mu_bulk_dashboard_INTERNAL_PORT:-5555}
 
+    command: celery --broker=${mu_bulk_CELERY_BROKER_URL:-amqp://${mu_bulk_bkr_USER:-meetUN}:${mu_bulk_bkr_PASS:-passMeetUN}@${mu_bulk_bkr_HOSTNAME:-mu_bulk_bkr}:${mu_bulk_bkr_INTERNAL_PORT:-5672}/${mu_bulk_bkr_VHOST:-BulkMeetUN}} flower --port=${mu_bulk_dashboard_INTERNAL_PORT:-5555}
+ 
     environment:
       mu_bulk_CELERY_BROKER_URL: ${mu_bulk_CELERY_BROKER_URL:-redis://${mu_bulk_rb_HOSTNAME:-mu_bulk_rb}:${mu_bulk_rb_INTERNAL_PORT:-6379}/0}
       mu_bulk_dashboard_INTERNAL_PORT: ${mu_bulk_dashboard_INTERNAL_PORT:-5555}
+
 
 volumes:
   mu-bulk-rb-data:
